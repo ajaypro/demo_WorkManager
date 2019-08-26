@@ -25,6 +25,8 @@ class SaveImageWorker(context: Context, params: WorkerParameters) : Worker(conte
     override fun doWork(): Result {
 
         makeStatusNotification("Saving image to file", applicationContext)
+        sleep()
+
         val resolver = applicationContext.contentResolver
 
         return try {

@@ -16,15 +16,17 @@ class CleanUpWorker(context: Context, params: WorkerParameters) : Worker(context
     override fun doWork(): Result {
 
         makeStatusNotification("Cleanup temp files", applicationContext)
+        sleep()
 
         return try {
             val outputDir = File(applicationContext.filesDir, OUTPUT_PATH)
             if (outputDir.exists()) {
                 val entries = outputDir.listFiles()
+                Timber.i("$entries")
 
-                for (entry in entries) {
+                entries.forEach { entry ->
                     val name = entry.name
-                    if (name.isNullOrEmpty() && name.endsWith(".png")) {
+                    if (name.isNotEmpty() && name.endsWith(".png")) {
                         val deleted = entry.delete()
                         Timber.i("deleted $name - $deleted")
                     }
