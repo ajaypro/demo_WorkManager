@@ -90,4 +90,10 @@ class BlurActivity : AppCompatActivity() {
                 R.id.radio_blur_lv_3 -> 3
                 else -> 1
             }
+
+    fun execute(view: View) {
+        viewModel.applyBlur(blurLevel)
+
+    }
+
 }

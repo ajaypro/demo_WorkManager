@@ -19,12 +19,35 @@ package com.example.background
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
+import androidx.work.*
+import com.example.background.workers.BlurWorker
 
 
 class BlurViewModel(application: Application) : AndroidViewModel(application) {
 
     internal var imageUri: Uri? = null
     internal var outputUri: Uri? = null
+
+    val workManager = WorkManager.getInstance(application)
+
+    // Building Data object to pass to bluractivity, Data object has image uri selected by user.
+    private fun createInputDataForUri(): Data {
+        val builder = Data.Builder()
+        imageUri?.let {
+            builder.putString(KEY_IMAGE_URI, imageUri.toString())
+        }
+        return builder.build()
+
+    }
+
+    // enqueue work request to workmanager, since its one time request of blurring one image at one click
+    internal fun applyBlur(blurLevel: Int) {
+
+        val blurRequest = OneTimeWorkRequestBuilder<BlurWorker>()
+                .setInputData(createInputDataForUri())
+                .build()
+        workManager.enqueue(blurRequest)
+    }
 
     private fun uriOrNull(uriString: String?): Uri? {
         return if (!uriString.isNullOrEmpty()) {

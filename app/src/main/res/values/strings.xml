@@ -15,7 +15,7 @@
   -->
 
 <resources>
-    <string name="app_name">Blur-O-Matic</string>
+    <string name="app_name">BlurImage</string>
 
     <!-- Titles -->
     <string name="blur_title">Select Blur Amount</string>
