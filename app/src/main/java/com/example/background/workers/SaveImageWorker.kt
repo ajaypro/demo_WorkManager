@@ -1,6 +1,7 @@
 package com.example.background.workers
 
 import android.content.Context
+import android.net.Uri
 import android.provider.MediaStore
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -32,6 +33,8 @@ class SaveImageWorker(context: Context, params: WorkerParameters) : Worker(conte
         return try {
             val resourUri = inputData.getString(KEY_IMAGE_URI)
 
+            resolver.openOutputStream(Uri.parse(resourUri))
+
             // inserting image into permanent location
             val imageUrl = MediaStore.Images.Media.insertImage(resolver, resourUri, Title, dateFormatter.format(Date()))
             if (!imageUrl.isNullOrEmpty()) {
@@ -45,6 +48,7 @@ class SaveImageWorker(context: Context, params: WorkerParameters) : Worker(conte
             }
 
         } catch (exception: Exception) {
+            Timber.i(exception, "Unable to save image to gallery")
             Result.failure()
         }
     }
