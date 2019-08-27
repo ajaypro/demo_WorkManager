@@ -17,9 +17,14 @@
 package com.example.background
 
 import android.app.Application
+import android.app.ApplicationErrorReport
+import android.bluetooth.BluetoothClass
 import android.net.Uri
+import android.os.BatteryManager
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.work.*
+import androidx.work.impl.constraints.trackers.BatteryChargingTracker
 import com.example.background.workers.BlurWorker
 import com.example.background.workers.CleanUpWorker
 import com.example.background.workers.SaveImageWorker
@@ -30,7 +35,17 @@ class BlurViewModel(application: Application) : AndroidViewModel(application) {
     internal var imageUri: Uri? = null
     internal var outputUri: Uri? = null
 
-    val workManager = WorkManager.getInstance(application)
+    private val workManager = WorkManager.getInstance(application)
+
+    internal val outputWorkInfos: LiveData<List<WorkInfo>>
+
+    init {
+        // This transformation makes sure that whenever the current work Id changes the WorkInfo
+        // the UI is listening to changes
+        outputWorkInfos = workManager.getWorkInfosByTagLiveData(TAG_OUTPUT)
+    }
+
+
 
     // Building Data object to pass to bluractivity, Data object has image uri selected by user.
     private fun createInputDataForUri(): Data {
@@ -42,17 +57,25 @@ class BlurViewModel(application: Application) : AndroidViewModel(application) {
 
     }
 
+    // Create charging constraint
+    val constraints = Constraints.Builder()
+            .setRequiresCharging(true)
+            .build()
+
+
     // enqueue work request to workmanager, since its one time request of blurring one image at one click
     internal fun applyBlur(blurLevel: Int) {
 
         // work request to blur image
 
         var continuation = workManager
-                .beginWith(OneTimeWorkRequest
-                        .from(CleanUpWorker::class.java))
+                .beginUniqueWork(IMAGE_MANIPULATION_WORK_NAME,
+                        ExistingWorkPolicy.REPLACE,
+                        OneTimeWorkRequest.from(CleanUpWorker::class.java))
 
         for (blur in 0 until blurLevel) {
             val blurRequest = OneTimeWorkRequestBuilder<BlurWorker>()
+
             if (blur == 0) {
                 blurRequest.setInputData(createInputDataForUri())
             }
@@ -60,13 +83,21 @@ class BlurViewModel(application: Application) : AndroidViewModel(application) {
             continuation = continuation.then(blurRequest.build())
         }
 
-        val saveImageRequest = OneTimeWorkRequest.Builder(SaveImageWorker::class.java).build()
+        val saveImageRequest  =  OneTimeWorkRequest.Builder(SaveImageWorker::class.java)
+                .setConstraints(constraints)
+                    .addTag(TAG_OUTPUT)
+                    .build()
+
 
         // Work continuation defines chain of work requests
+        continuation = continuation.then(saveImageRequest)
 
-        continuation.then(saveImageRequest)
-                .enqueue()
+              // Actually start the work
+                continuation.enqueue()
+    }
 
+    fun stopWork(){
+        workManager.cancelUniqueWork(IMAGE_MANIPULATION_WORK_NAME)
     }
 
     private fun uriOrNull(uriString: String?): Uri? {

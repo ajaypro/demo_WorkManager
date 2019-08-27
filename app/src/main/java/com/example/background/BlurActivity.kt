@@ -16,6 +16,7 @@
 
 package com.example.background
 
+import android.content.Intent
 import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +25,9 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioGroup
+import androidx.lifecycle.Observer
 import com.bumptech.glide.Glide
+import timber.log.Timber
 
 
 class BlurActivity : AppCompatActivity() {
@@ -42,6 +45,7 @@ class BlurActivity : AppCompatActivity() {
         setContentView(R.layout.activity_blur)
         bindResources()
 
+
         // Get the ViewModel
         viewModel = ViewModelProviders.of(this).get(BlurViewModel::class.java)
 
@@ -51,6 +55,28 @@ class BlurActivity : AppCompatActivity() {
         viewModel.imageUri?.let { imageUri ->
             Glide.with(this).load(imageUri).into(imageView)
         }
+
+        viewModel.outputWorkInfos.observe(this, Observer {
+
+            if (it.isNullOrEmpty()) return@Observer
+
+            val workInfo = it[0]
+
+            if (workInfo.state.isFinished) {
+                showWorkFinished()
+
+                val outputImageUri = workInfo.outputData.getString(KEY_IMAGE_URI)
+
+                if (!outputImageUri.isNullOrEmpty()) {
+                    viewModel.setOutputUri(outputImageUri as String)
+                    outputButton.visibility = View.VISIBLE
+                }
+
+            } else {
+                showWorkInProgress()
+            }
+        })
+
 
     }
 
@@ -91,9 +117,23 @@ class BlurActivity : AppCompatActivity() {
                 else -> 1
             }
 
+
     fun execute(view: View) {
         viewModel.applyBlur(blurLevel)
 
+    }
+
+    fun outputImage(view: View) {
+        viewModel.outputUri?.let {
+            val actionView = Intent(Intent.ACTION_VIEW, it)
+            actionView.resolveActivity(packageManager)?.run {
+                startActivity(actionView)
+            }
+        }
+    }
+
+    fun cancelWork(view:View){
+        viewModel.stopWork()
     }
 
 }

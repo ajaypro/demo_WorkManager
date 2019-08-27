@@ -89,6 +89,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/cancel_work"
                     android:visibility="gone"
+                    android:onClick="cancelWork"
                     />
 
                 <ProgressBar
@@ -114,8 +115,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/see_file"
+                android:onClick="outputImage"
                 android:visibility="gone"
-                tools:visibility="visible" />
+                tools:visibility="visible"
+                 />
 
         </LinearLayout>
 

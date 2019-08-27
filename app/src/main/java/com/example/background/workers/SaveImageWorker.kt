@@ -1,6 +1,7 @@
 package com.example.background.workers
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.work.Worker
@@ -33,10 +34,11 @@ class SaveImageWorker(context: Context, params: WorkerParameters) : Worker(conte
         return try {
             val resourUri = inputData.getString(KEY_IMAGE_URI)
 
-            resolver.openOutputStream(Uri.parse(resourUri))
+            val bitmap = BitmapFactory.decodeStream(
+                    resolver.openInputStream(Uri.parse(resourUri)))
 
             // inserting image into permanent location
-            val imageUrl = MediaStore.Images.Media.insertImage(resolver, resourUri, Title, dateFormatter.format(Date()))
+            val imageUrl = MediaStore.Images.Media.insertImage(resolver, bitmap, Title, dateFormatter.format(Date()))
             if (!imageUrl.isNullOrEmpty()) {
                 val output = workDataOf(KEY_IMAGE_URI to imageUrl)
                 Result.success(output)
